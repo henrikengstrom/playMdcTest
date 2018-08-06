@@ -3,6 +3,7 @@ package filters
 import javax.inject._
 import play.api.mvc._
 import scala.concurrent.ExecutionContext
+import org.slf4j.MDC
 
 /**
  * This is a simple filter that adds a header to all requests. It's
@@ -16,6 +17,7 @@ import scala.concurrent.ExecutionContext
 class ExampleFilter @Inject()(implicit ec: ExecutionContext) extends EssentialFilter {
   override def apply(next: EssentialAction) = EssentialAction { request =>
     next(request).map { result =>
+      MDC.put("testKey", "testValue")
       result.withHeaders("X-ExampleFilter" -> "foo")
     }
   }

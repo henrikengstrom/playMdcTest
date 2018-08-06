@@ -3,7 +3,7 @@ plugins {
     id 'idea'
 }
 
-def playVersion = "2.6.17"
+def playVersion = "2.6.11"
 def scalaVersion = System.getProperty("scala.binary.version", /* default = */ "2.12")
 
 model {
@@ -40,4 +40,17 @@ repositories {
         url "https://repo.lightbend.com/lightbend/ivy-releases"
         layout "ivy"
     }
+}
+
+apply plugin: 'java'
+
+// Add the agent to a separate configuration so it doesn't add to the normal class path
+configurations {
+    agent
+}
+
+dependencies {
+    compile files("libs/cinnamon-chmetrics_2.12-2.10.0.jar")
+    compile files("libs/cinnamon-slf4j-mdc_2.12-2.10.0.jar")
+    agent files("libs/cinnamon-agent-2.10.0.jar")
 }
