@@ -1,57 +1,123 @@
-# play-scala-starter-example
+# Play Cinnamon MDC example
 
-[<img src="https://img.shields.io/travis/playframework/play-scala-starter-example.svg"/>](https://travis-ci.org/playframework/play-scala-starter-example)
+An example of Cinnamon MDC in a Play application
 
-This is a starter application that shows how Play works.  Please see the documentation at <https://www.playframework.com/documentation/latest/Home> for more details.
+## Prerequisites
 
-## Running
+Make sure you have access to the Cinnamon JAR files and save them in the `libs` folder.
 
-Run this using [sbt](http://www.scala-sbt.org/).  If you downloaded this project from <http://www.playframework.com/download> then you'll find a prepackaged version of sbt in the project directory:
+## Build
 
-```bash
-sbt run
+#### Gradle
+
+```
+> ./gradlew stage
 ```
 
-And then go to <http://localhost:9000> to see the running web application.
+#### sbt
 
-There are several demonstration files available in this template.
+```
+> sbt dist
+```
 
-## Controllers
+## Run example
 
-- HomeController.scala:
+#### Gradle
 
-  Shows how to handle simple HTTP requests.
+```
+> ./build/stage/playBinary/bin/playBinary
+```
 
-- AsyncController.scala:
+_Since you probably have put the Cinnamon agent JAR in the `libs` folder you can link to there._ 
 
-  Shows how to do asynchronous programming when handling a request.
+#### sbt
 
-- CountController.scala:
+```
+> cd target/universal
+> unzip play-scala-starter-example-1.0-SNAPSHOT.zip
+> ./play-scala-starter-example-1.0-SNAPSHOT/bin/play-scala-starter-example
+```
 
-  Shows how to inject a component into a controller and use the component when
-  handling requests.
+### Start up logging
+ 
+You should see something similar to this being logged when you start the application. 
 
-## Components
+**If you don't see this output it means that the agent has not been started, i.e. there will not be any Cinnamon related functionality.**
+```
+[INFO] [08/09/2018 13:31:05.176] [Cinnamon] Agent version 2.10.0
+[INFO] [08/09/2018 13:31:05.324] [Cinnamon] Agent found Play version 2.6.17
+[INFO] [08/09/2018 13:31:05.347] [Cinnamon] Agent found Scala Futures version 2.12.6
+[INFO] [08/09/2018 13:31:06.306] [Cinnamon] Agent found Scala version: 2.12.6
+[INFO] [08/09/2018 13:31:06.306] [Cinnamon] Agent found Akka version: 2.5.11
+[INFO] [08/09/2018 13:31:06.312] [Cinnamon] Agent found Akka Streams version 2.5.11
+[info] application - ApplicationTimer demo: Starting application at 2018-08-09T17:31:07.860Z.
+[info] play.api.Play - Application started (Prod)
+[INFO] [08/09/2018 13:31:07.877] [Cinnamon] Agent found Akka HTTP version: 10.0.13
+[info] p.c.s.AkkaHttpServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9000
+```
 
-- Module.scala:
+### Verifying MDC propagation
 
-  Shows how to use Guice to bind all the components needed by your application.
+There are a couple of endpoints available to test the MDC propagation.
 
-- Counter.scala:
+#### Synchronous call
 
-  An example of a component that contains state, in this case a simple counter.
+```
+> curl localhost:9000
+```
 
-- ApplicationTimer.scala:
+_Expected result (values will differ as they are nano seconds):_
 
-  An example of a component that starts when the application starts and stops
-  when the application stops.
+```
+{filterATime=time-484774567273027, filterBTime=time-484774567407943, testKey=testValue}
+```
 
-## Filters
+_Server logging:_
 
-- Filters.scala:
+```
+filterA (inbound MDC): {testKey=testValue}
+filterB (inbound MDC): {filterATime=time-484774567273027, testKey=testValue}
+filterA: (returning result): {filterATime=time-484774567273027, filterBTime=time-484774567407943, testKey=testValue}
+```
 
-  Creates the list of HTTP filters used by your application.
 
-- ExampleFilter.scala
+#### Asynchronous call
 
-  A simple filter that adds a header to every response.
+```
+> curl localhost:9000/future
+```
+
+_Expected result (values will differ as they are nano seconds):_
+
+```
+{filterATime=time-484846102478530, filterBTime=time-484846102545111, testKey=testValue, futureComputationTime=time-484846108038690}D
+```
+
+_Server logging:_
+
+```
+filterA (inbound MDC): {testKey=testValue}
+filterB (inbound MDC): {filterATime=time-484846102478530, testKey=testValue}
+filterA: (returning result): {filterATime=time-484846102478530, filterBTime=time-484846102545111, testKey=testValue, futureComputationTime=time-484846108038690}
+```
+
+
+#### Call using custom Router
+
+```
+> curl localhost:9000/mdc/test
+```
+
+_Expected result (values will differ as they are nano seconds):_
+
+```
+{customRouterTime=time-484877718287303, filterATime=time-484877718646453, filterBTime=time-484877718680394, testKey=testValue}
+```
+
+_Server logging:_
+
+```
+filterA (inbound MDC): {customRouterTime=time-484877718287303, testKey=testValue}
+filterB (inbound MDC): {customRouterTime=time-484877718287303, filterATime=time-484877718646453, testKey=testValue}
+filterA: (returning result): {customRouterTime=time-484877718287303, filterATime=time-484877718646453, filterBTime=time-484877718680394, testKey=testValue}
+```

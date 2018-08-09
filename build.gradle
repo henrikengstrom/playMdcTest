@@ -3,8 +3,29 @@ plugins {
     id 'idea'
 }
 
-def playVersion = "2.6.11"
-def scalaVersion = System.getProperty("scala.binary.version", /* default = */ "2.12")
+def playVersion = "2.6.17"
+def scalaVersion = System.getProperty("scala.binary.version", "2.12")
+def cinnamonVersion = '2.10.0'
+
+repositories {
+    maven {
+        credentials {
+            username '87870aa8-9305-4ea9-ba9c-d82f7faa1904@lightbend'
+            password '3d850f7e41cdc4dad28e3550a82c5e882ad8c8c0'
+        }
+        mavenCentral()
+        url = 'https://repo.lightbend.com/commercial-releases'
+    }
+    ivy {
+        name "lightbend-ivy-release"
+        url "https://repo.lightbend.com/lightbend/ivy-releases"
+        layout "ivy"
+        credentials {
+            username '<USER>'
+            password '<PWD>'
+        }
+    }
+}
 
 model {
     components {
@@ -21,36 +42,23 @@ model {
     }
 }
 
-dependencies {
-    play "com.typesafe.play:play-guice_$scalaVersion:$playVersion"
-    play "com.typesafe.play:play-logback_$scalaVersion:$playVersion"
-    play "com.h2database:h2:1.4.197"
-
-    playTest "org.scalatestplus.play:scalatestplus-play_$scalaVersion:3.1.2"
-}
-
-repositories {
-    jcenter()
-    maven {
-        name "lightbend-maven-releases"
-        url "https://repo.lightbend.com/lightbend/maven-release"
-    }
-    ivy {
-        name "lightbend-ivy-release"
-        url "https://repo.lightbend.com/lightbend/ivy-releases"
-        layout "ivy"
-    }
-}
-
-apply plugin: 'java'
-
 // Add the agent to a separate configuration so it doesn't add to the normal class path
 configurations {
     agent
 }
 
 dependencies {
-    compile files("libs/cinnamon-chmetrics_2.12-2.10.0.jar")
-    compile files("libs/cinnamon-slf4j-mdc_2.12-2.10.0.jar")
-    agent files("libs/cinnamon-agent-2.10.0.jar")
+    play "com.typesafe.play:play-guice_$scalaVersion:$playVersion"
+    play "com.typesafe.play:play-logback_$scalaVersion:$playVersion"
+    play "com.h2database:h2:1.4.197"
+
+    playTest "org.scalatestplus.play:scalatestplus-play_$scalaVersion:3.1.2"
+
+    agent group: 'com.lightbend.cinnamon', name: 'cinnamon-agent', version: cinnamonVersion
+
+    play "com.lightbend.cinnamon:cinnamon-slf4j-mdc_2.12:$cinnamonVersion"
+}
+
+tasks.withType(CreateStartScripts) {
+    defaultJvmOpts = ["-javaagent:${configurations.agent.singleFile}"]
 }

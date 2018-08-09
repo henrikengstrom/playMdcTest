@@ -16,8 +16,9 @@ import org.slf4j.MDC
 @Singleton
 class ExampleFilter @Inject()(implicit ec: ExecutionContext) extends EssentialFilter {
   override def apply(next: EssentialAction) = EssentialAction { request =>
+    MDC.put("testKey", "testValue")
+
     next(request).map { result =>
-      MDC.put("testKey", "testValue")
       result.withHeaders("X-ExampleFilter" -> "foo")
     }
   }
